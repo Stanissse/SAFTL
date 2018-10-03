@@ -45,13 +45,7 @@ Im_Fit = sum(ZernikeCalc([1 4 5 6 11 12 13 22 37],ZernCoeff,length(pupil),'NOLL'
 Im_Fit = Im_Fit/max(Im_Fit(:));
 T_obj=sqrt(Im_Fit);
 clear ZernCoeff; 
-
-
-% Apo=pupil./sqrt(cos(ALPHA)).*T_obj; %combined effect of objective transmission and aplanatic factor of objective lens E~srqt(cos(theta))
 Apo=pupil.*T_obj; %combined effect of objective transmission and aplanatic factor of objective lens E~srqt(cos(theta))
-
-%scalar: initial pupil field
-%E_pup=pupil./sqrt(cos(ALPHA)).*T_obj;
 
 
 %% import raw data / centering of images / removing background
@@ -62,12 +56,6 @@ Apo=pupil.*T_obj; %combined effect of objective transmission and aplanatic facto
 % Import Fits-Stack
 import matlab.io.*
 [filename,PathName] = uigetfile('*.tif','Select the FITS file');
-%fname = 'single_bead.tif';
-%fname = 'UAF_stack_PSspeckBeads_dz1µm_crop.tif';
-%fname = 'Stack_B_final.tif';
-%fname = 'bead_2018-03-22_stack4.tif';
-%fname = 'avg-stack2_SAF.tif';
-%fname = 'avg-stack2_UAF_flipped.tif';
 fname = [PathName filename];
 
 info = imfinfo(fname);
@@ -125,41 +113,6 @@ end
   %I4(:,:,3:5)=0.8*I4(:,:,3:5); plot(squeeze(sum(sum(I4,1),2)),'-o')
 
   Image_stack=I4/trapz(I4(:));
-
-    
-%% simulate raw data (optional)
-% 
-% num_images=9;
-% dz=200e-9;
-% m_focus=3;
-% sx=50;
-% sy=50;
-% aberr_vec=[zeros(1,4) 0.5 -0.3 0.1 -0.1 0 0 0.4 0 0 0 0 0 0 0 0 0 0 0.2];
-% aberr=sum(ZernikeCalc(1:length(aberr_vec),aberr_vec',pupil,'Noll'),3);
-% 
-% clear I4 I5 I6;
-% 
-% %simulate PSF
-% for m = 1:num_images
-%     mx=1; %magnitude of x-dipole
-%     my=1;
-%     mz=1;
-%     tmp=fun_dipole_imaging_full(T_obj.*exp(1i*aberr),sx,lambda_0,ux,NA,RI,[mx my mz],(m-m_focus)*dz,'full');
-%     I4(:,:,m)=tmp;
-%   
-% %         %add noise
-% %         photon_no=20000;
-% %         tmp=tmp/sum(tmp(:))*photon_no;
-% %         I4(:,:,m)=poissrnd(tmp);
-%     
-%     I5(:,:,m)=embed(tmp,dia_pupil,0);
-%     I6=I5;
-% end
-
-%if raw data are simulated, bead-deconvolution is not required --> skip
-%corresponding block    
-    
-%I5=I4/sum(I4(:)); %image stack to be used for phaes retrieval; should be normalized
 
 
 %% pre-calculating some data required for simulating bead-images
@@ -296,9 +249,6 @@ options.MaxFunEvals=1000;
 % FiniteDifferenceStepSize=0.0125;
 tmp=fminunc(@(Z_ini) fun_phase_retrieval_vec_FAST(Z_ini, Image_stack, kernel, F_kernel, defocus, z_vec, E_BFP, dia_pupil, Zernike_stack,b, 'n'),Z_ini,options);
 
-% % % bound=[2 2 2 0.3*ones(1,6) 2 0.3*ones(1,10) 2 0.3*ones(1,14) 2 2];
-% % % tmp=fminsearchbnd(@(Z_ini) fun_phase_retrieval_vec_FAST(Z_ini, Image_stack, kernel, F_kernel, defocus, z_vec, E_BFP, dia_pupil, Zernike_stack,b, 'n'),Z_ini,-bound,+bound);
-
 disp('done');
 toc
 
@@ -308,7 +258,6 @@ Z_aberr=tmp;
 phase=sum(ZernikeCalc(modes,[0 0 0 Z_aberr(4:end)]',pupil,'Noll'),3);
 
 % removing spherical defocus
-%[a_SD, SD, red_mask]=spherical_defocus_analysis(phase,NA,RI(3),RI(1));
 defocus_coefs=ZernikeCalc(modes,defocus,pupil,'Noll'); %zernike coefs of high-NA defocus
 a_def=dot(defocus_coefs/norm(defocus_coefs),Z_aberr); 
 Z_aberr2=(Z_aberr-a_def*defocus_coefs'/norm(defocus_coefs)); %defocus-free Zernike-coefs
