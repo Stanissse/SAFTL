@@ -65,7 +65,7 @@ end
 
 
 %% Select only first element of stack
-imgNR=7
+imgNR=1
 if single ==0;
     
     
@@ -88,7 +88,7 @@ if single ==0;
         posX=int16(PosxSAF);
         posY=int16(PosySAF);
         I=imagedata_(posY-4:posY+5,posX-4:posX+5);
-        figure(2)
+        figure(22)
         imagesc(I)
         title('manual')
         [x,y,z,ii,bg_,ZEst_] = MLE_Estimator_TOT(double(I),25,1600);
@@ -148,7 +148,7 @@ toc
 R=sqrt((X-(rx+0)*115).^2+(Y-(ry+0)*115).^2);
 size(R)
 % % select ROI (5000 nm)
-    Z_=ZEst;
+    Z_=ZEst*5;
    
     Delete = find(R/500000 >= 10);
     % sets unphysical ratios to zero
@@ -161,6 +161,7 @@ size(R)
     Z_ = Z_(Z_~=0);
 
 figure(90) 
+
 
 format short g
 plot(R/1000,Z_,'mx')

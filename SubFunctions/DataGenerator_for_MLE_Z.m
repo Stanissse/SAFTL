@@ -13,7 +13,7 @@ global Z ux uk uz Ex_Px Ex_Py Ex_Pz Ey_Px Ey_Py Ey_Pz Nx n_photon bg mask
 N=64;
 lambda_0=680e-9;
 
-defocus=-300e-9;  %defocus of objective lens 
+defocus=-700e-9;  %defocus of objective lens 
 
 NA=1.67; RI=[1.45 1.45 1.78]; %refractive indices; RI=[RI_specimen, RI_intermed., RI_immoil]
 
@@ -42,7 +42,7 @@ aberrNum = [2 : 37,57];
 load('coeff_Example.mat');
 Zernike_stack=ZernikeCalc(aberrNum,ones(length(Z_aberr),1),pupil,'Noll');
 hugo=zeros(1,1,size(Zernike_stack,3));
-hugo(1,1,1:length(Z_aberr2))=zeros(length(Z_aberr2),1);%[0 0 Z_aberr2(3:end)];%zeros(length(Z_aberr2),1);%
+hugo(1,1,1:length(Z_aberr2))=[0 0 Z_aberr2(3:end)];%zeros(length(Z_aberr2),1);%zeros(length(Z_aberr2),1);%
 aberr=sum(Zernike_stack.*repmat(hugo,[N,N,1]),3);
 
 uz=.005e-6;%.025e-6;
@@ -76,10 +76,3 @@ end
 
 save('PSF_SAF_5nm.mat','PSF_tot','uz', 'defocus', 'NA')
 toc
-
-% %% save tiff
-% 
-% outputFileName = 'img_stack.tif'
-% for K=1:length(PSF_tot(1, 1, :))
-%    C=PSF_tot(:, :, K); imwrite(uint8(255*PSF_tot(:, :, K)/max(C(:))), outputFileName, 'WriteMode', 'append');
-% end

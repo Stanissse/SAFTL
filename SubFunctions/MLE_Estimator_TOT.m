@@ -67,13 +67,12 @@ fun = @(x)estimator3D(x);
         x0=Param(3);
         y0=-Param(4);
         BG0=Param(1);
-        %N0=sum(I(:))-BG0*nx*ny; %initial guess for number of photons
+        N0=sum(I(:))-BG0*nx*ny; %initial guess for number of photons
         
         %----MLE estimation----------        
         var0=[x0 y0 round(nz/2) N0 BG0]; %initial estimates
         LB=[-fw/2 -fw/2 1 0.75*N0 0.1*BG0]; %lower bounds
-        UB=[+fw/2 +fw/2 nz 1.5*N0 BG0]; %upper bounds
-% % %         tmp=fminsearchbnd(fun_LLH,var0,LB,UB)       
+        UB=[+fw/2 +fw/2 nz 1.5*N0 BG0]; %upper bounds     
 
         Z_EST = 1+abs((Param(5)-.45)/.45*45);
         
@@ -95,10 +94,6 @@ fun = @(x)estimator3D(x);
         optionsFmin = optimset('MaxIter',10000,'MaxFunEvals',10000);
 %         tmp=fminunc(fun,[100 N0 BG0 D(1) D(2)],options)
         tmp=fminsearch(fun,[50 N0 BG0 D(1) D(2)],optionsFmin)
-%         Options = optimoptions(@lsqnonlin,'Algorithm','trust-region-reflective','FunctionTolerance',1e-7,'StepTolerance',1e-90,'InitDamping',1e-5);
-%         Options.Algorithm = 'levenberg-marquardt';
-%         x0=[ZEst Int BG0 D(1) D(2)];
-%         tmp = lsqnonlin(fun,x0,[],[],Options)
 
         ZEST=tmp(1);
         x=tmp(4);

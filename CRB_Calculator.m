@@ -41,7 +41,7 @@ clear ZernCoeff;
 
 
 %n_photon=photonN(ii); %number of camera counts in the brightest dipole-image
-n_photon=2000;
+n_photon=1000;
 bg=200; %background-counts
 
 %     defocus_vec=(defocusPos-1)*4e-8-1.e-6  %defocus of objective lens 
@@ -177,5 +177,7 @@ legend('CRB','MLE','CNN')
 %%
 figure(9)
 plot(defocus_vec(1:end-1)*10^6,sqrt(CRBx))
+xlabel('Defocus in \mum'); 
+ylabel('precision nm');
 title('CRB for system aberrations xy-plane');
 legend('CRB','CNN-x','CNN-y','MLE-x','MLE-y')

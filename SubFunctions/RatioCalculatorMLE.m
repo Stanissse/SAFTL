@@ -45,7 +45,7 @@ for j = 1:25%N_Images-1
                 end
 
                 % condition if fluoropühore lies to close to the edges
-                if(posY > 5 & posX > 5 & posY < dx-5 & posX < dy-5 & Int > 50000 & Int <100000)
+                if(posY > 5 & posX > 5 & posY < dx-5 & posX < dy-5 & Int > 5000 & Int <50000)
 
                     % estimate z
                     R=sqrt((posX*115-rx*115).^2+(posY*115-ry*115).^2);
