@@ -1,16 +1,16 @@
-%evaluate experimental molecule Data --> 3D localisations
-
-clear all; 
-
-%% user parameters 
-
-%camera parameters
-gain=50; 
-amp=9.8; %electrons per count 
-QE=0.95; %quantum efficiency
-
-
-%% loading PSF model
+% % % %evaluate experimental molecule Data --> 3D localisations
+% % % 
+% % % clear all; 
+% % % 
+% % % %% user parameters 
+% % % 
+% % % %camera parameters
+% % % gain=50; 
+% % % amp=9.8; %electrons per count 
+% % % QE=0.95; %quantum efficiency
+% % % 
+% % % 
+% % % %% loading PSF model
 
 %vectashield-PSFs:
 %load('PSF_SAF_NA1,7_0-2nm-200nm_RI=1,45_dz=-300nm.mat') %defocused PSF-model; should give better z-estimates
@@ -30,39 +30,39 @@ dz_PSF=diff(PSF_norm,1,3); %calculating derivative along z (required for ML esti
 PSF_norm(:,:,end)=[]; %delete last slice to match size of dz_PSF
 
 fw=3;
-
-
-%% reading in data
-
-[Name,Path,~]=uigetfile('*.tif','choose multipage tif data','C:\Users\q004aj\Documents\PROJEKTE\SAF-TIRF_Gerhard Schütz - Immunolog. Synapse\Data');
-    image_no=length(imfinfo([Path Name]));
-    for m=1:image_no;
-      data(:,:,m)=imread([Path Name],m);
-    end
-disp('done');
+% % % 
+% % % 
+% % % %% reading in data
+% % % 
+% % % [Name,Path,~]=uigetfile('*.tif','choose multipage tif data','C:\Users\q004aj\Documents\PROJEKTE\SAF-TIRF_Gerhard Schütz - Immunolog. Synapse\Data');
+% % %     image_no=length(imfinfo([Path Name]));
+% % %     for m=1:image_no;
+% % %       imagedata(:,:,m)=imread([Path Name],m);
+% % %     end
+% % % disp('done');
     
 %% <<<<<<<<<<<<<< METHOD A : click & evaluate
-for j=1:1
+for j=2:2
     % choose image 
     img_no=j;
     figure(1);
-    imagesc(data(:,:,img_no)); colormap gray; axis equal; axis tight; 
+    imagesc(imagedata(:,:,img_no)); colormap gray; axis equal; axis tight; 
     title('exp. image');
 
     % click onto molecules
 
     figure(1);
-    imagesc(data(:,:,img_no)); colormap gray; axis equal; axis tight; 
+    imagesc(imagedata(:,:,img_no)); colormap gray; axis equal; axis tight; 
     title('exp. image');
     [px, py] = getpts(gcf); %click on several molecules and press enter 
     no_mols=length(px); 
-
+tic
     clear tmp;
     for m=1:no_mols;
-        tmp(:,:,m)=data(round((py(m)-floor((nx0-1)/2)+fw):(py(m)+ceil((nx0-1)/2))-fw),round((px(m)-floor((nx0-1)/2)+fw):(px(m)+ceil((nx0-1)/2)-fw)),img_no);
+        tmp(:,:,m)=imagedata(round((py(m)-floor((nx0-1)/2)+fw):(py(m)+ceil((nx0-1)/2))-fw),round((px(m)-floor((nx0-1)/2)+fw):(px(m)+ceil((nx0-1)/2)-fw)),img_no);
     end
 
-    data2=double(tmp/gain*amp/QE); %converting into units of photons; 
+    data2=tmp;%double(tmp/gain*amp/QE); %converting into units of photons; 
 
     % imagesc(data2(:,:,2)); title('fist exp. image / photons'); axis equal; axis tight; colorbar; 
 
@@ -107,17 +107,17 @@ for j=1:1
 
             %----MLE estimation----------    
             z_ini=80; %initial z-estimate (frame-no.)
-            gauss_est(m,:)=[x0 y0 round(nz/2) N0 BG0]; %initial estimates (e.g. from Gaussfit)
+            gauss_est(m,:)=[x0 y0 round(nz/2) N0 BG0] %initial estimates (e.g. from Gaussfit)
             LB=[-nx/3 -nx/3 0 0.5*N0 0.5*BG0]; %lower bounds
             UB=[+nx/3 +nx/3 nz 2*N0 2*BG0]; %upper bounds
             %tmp=fmincon(fun_LLH,x0,[],[],[],[],[1 0.75*N_ini 0.75*BG_ini],[nz 1.5*N_ini 1*BG_ini]);
-            tmp=fminsearchbnd(fun_LLH,gauss_est(m,:),LB,UB);
+            tmp=fminsearchbnd(fun_LLH,gauss_est(m,:),LB,UB)
             x_est(m)=tmp(1);
             y_est(m)=tmp(2);
-            z_est(m)=tmp(3)
+            z_est(m)=tmp(3);
             N_est(m)=tmp(4);
             BG_est(m)=tmp(5);
-
+toc
     %         z_est_nm(m)=interp1(1:length(z_vec),z_vec,tmp(3))*1e9 %estimated z-position in nm
     % 
     %         imagesc(I); axis equal; axis tight; title(['signal=' num2str(N_est(m))]); pause(0);
@@ -125,11 +125,11 @@ for j=1:1
     end
     Z(j)=tmp(3);
 end
-% % % figure(2); 
-% % % plot3(px,py,z_est_nm,'o'); 
-% % % grid on;
-% % % hold on; 
-% % % zlabel('z / nm');
+% figure(2); 
+% plot3(px,py,z_est_nm,'o'); 
+% grid on;
+% hold on; 
+% zlabel('z / nm');
 % % % 
 % % % finaldata{img_no}=[px+y_est' py+x_est' BG_est' N_est' z_est_nm'];
 % % % 

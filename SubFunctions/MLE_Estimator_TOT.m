@@ -1,4 +1,4 @@
-function [x,y,z,N,BG,ZEST] = MLE_Estimator_TOT(PSF_img,ZEst,Int)
+function [x,y,z,N,BG,ZEST,Q] = MLE_Estimator_TOT(PSF_img,ZEst,Int)
 
 global pxSize DAT I PSF_tot
 
@@ -51,6 +51,34 @@ fun = @(x)estimator3D(x);
         D=(centerOfMass(abs(I))-floor(10/2+1));
         
         
+            %----Gaussfit for initial estimates of x-y-position,BG,N0-----
+            param_ini=[BG0 max(I(:))-BG0 0 0 1]; %[offset amplitude x-shift y-shift width]; initial parameters for Gaussfit
+            lb=[0 0.5*(max(I(:))-BG0) -nx/3 -nx/3 0.5]; %lower bounds for fit-parameters
+            ub=[2*BG0 1.5*(max(I(:))-BG0) nx/3 nx/3 3]; %upper bounds
+            [Param,resnorm,residual,exitflag]=lsqcurvefit(@fun_gauss_and_offset_test,param_ini,x_data,I,lb,ub);
+            Gaussfit=fun_gauss_and_offset_test(Param,x_data);
+            x0=Param(3);
+            
+            % Q corresponds to fit quality
+            Q=(sum(resnorm(:)));
+            
+            if Q/1e5>.75
+                x=0;
+                x=y;
+                z=0;
+                N=0;
+                BG=0;
+                ZEST=0;
+                Q=0;
+                return
+            end
+            
+            y0=Param(4);
+            BG0=Param(1); %this serves as initial estimate for the MLE fit
+            %N0=Param(2)*2*pi*Param(5)^2; %energy contained (see e.g. formula in Thunderstorm script)
+            N0=sum(I(:))-BG0*nx*ny; %initial guess for number of photons - seems to work better 
+        
+        
 % % % %         initial estimates of x-y-position,BG,N0 using Gaussfit
 % % %         param_ini=[BG0 max(I(:))-BG0 5+D(1) 5+D(2) 1]; %[offset amplitude x-shift y-shift width]; initial parameters for Gaussfit
 % % %         lb=[0 0.5*(max(I(:))-BG0) 0 0 0.15]; %lower bounds for fit-parameters
@@ -93,7 +121,13 @@ fun = @(x)estimator3D(x);
         options = optimoptions(@fminunc,'DiffMinChange',.000001,'OptimalityTolerance',1e-10);
         optionsFmin = optimset('MaxIter',10000,'MaxFunEvals',10000);
 %         tmp=fminunc(fun,[100 N0 BG0 D(1) D(2)],options)
-        tmp=fminsearch(fun,[50 N0 BG0 D(1) D(2)],optionsFmin)
+        tmp=fminsearch(fun,[ZEst N0 BG0 D(1) D(2)],optionsFmin)
+% % % %         
+% % % %         Ini=[ZEst N0 BG0 D(1) D(2)];
+% % % %         LB=[1 .25*N0 .25*BG0 -3 -3]; %lower bounds
+% % % %         UB=[100 2.5*N0 2.5*BG0 3 3]; %upper bounds
+% % % %         %tmp=fmincon(fun_LLH,x0,[],[],[],[],[1 0.75*N_ini 0.75*BG_ini],[nz 1.5*N_ini 1*BG_ini]);
+% % % %         tmp=fminsearchbnd(fun,Ini,LB,UB,optionsFmin)
 
         ZEST=tmp(1);
         x=tmp(4);

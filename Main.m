@@ -22,22 +22,22 @@ QE=0.95; %quantum efficiency
 %% Open first file and find point between TOT and UAF img
 % Import Fits-Stack
 import matlab.io.*
-[filename,PathName] = uigetfile('*.tif','Select the FITS file');
+[filenameIMG,PathNameIMG] = uigetfile('*.tif','Select the FITS file');
 
 % Open STACK
-info = imfinfo([PathName,filename]);
+info = imfinfo([PathNameIMG,filenameIMG]);
 num_images = numel(info);
-[x y z]=size(imread([PathName,filename], 1, 'Info', info));
+[x y z]=size(imread([PathNameIMG,filenameIMG], 1, 'Info', info));
 
 imagedata=zeros(x,y,num_images);
 
 for k = 1:num_images
-    imagedata(:,:,k) = imread([PathName,filename], k, 'Info', info);
+    imagedata(:,:,k) = imread([PathNameIMG,filenameIMG], k, 'Info', info);
 end
 
 imagedata = double(imagedata/gain*amp/QE);
-% [ImagewithoutBG,BG,OrgImg]=EverBG(imagedata);
-% ImagewithoutBG=ImagewithoutBG-min(ImagewithoutBG(:))+100;
+[ImagewithoutBG,BG,OrgImg]=EverBG(imagedata);
+ImagewithoutBG=ImagewithoutBG-min(ImagewithoutBG(:))+100;
 
 
 imagedata_=imagedata(:,:,1);
@@ -55,6 +55,11 @@ axis off
 [rx, ry]=ginput(1);
 close(f1)
 
+%% SAVE TIFF (If needed)
+outputFileName = '-400nm-BG.tif'
+for K=1:length(imagedata(1, 1, :))
+   imwrite(uint16(ImagewithoutBG(:, :, K)), outputFileName, 'WriteMode', 'append', 'Compression', 'none');
+end
 
 %% Ask for single molecule
 if AskUser('Do you wnat to look at single molecules? Enter 1 for "yes" or 0 for "no"    ');
@@ -65,7 +70,7 @@ end
 
 
 %% Select only first element of stack
-imgNR=1
+imgNR=2
 if single ==0;
     
     
@@ -82,17 +87,17 @@ if single ==0;
         axis off
         [PosxSAF, PosySAF]=ginput(1);
         close(f1)
- 
+ tic
         R=sqrt((PosxSAF*115-rx*115).^2+(PosySAF*115-ry*115).^2);
         ZestAnal=-sqrt(-(R)^2+(1e6)^2)+1e6;
         posX=int16(PosxSAF);
         posY=int16(PosySAF);
         I=imagedata_(posY-4:posY+5,posX-4:posX+5);
-        figure(22)
-        imagesc(I)
-        title('manual')
+%         figure(22)
+%         imagesc(I)
+%         title('manual')
         [x,y,z,ii,bg_,ZEst_] = MLE_Estimator_TOT(double(I),25,1600);
-
+toc
 end
 
 
@@ -105,6 +110,7 @@ DAT = csvread([PathName,filename],1, 0);
 tic
 [X, Y, Z_p10, I_, BG,ZEst,Start]=RatioCalculatorMLE(imagedata,rx,ry);
 toc
+
 
 %% delete unphys
 
@@ -147,24 +153,22 @@ toc
 %%
 R=sqrt((X-(rx+0)*115).^2+(Y-(ry+0)*115).^2);
 size(R)
-% % select ROI (5000 nm)
-    Z_=ZEst*5;
-   
-    Delete = find(R/500000 >= 10);
-    % sets unphysical ratios to zero
-    Z_(Delete) = 0;
-    R(Delete) = 0;
+% % select ROI (25000 nm)
+Z_=ZEst*5;
+
+Delete = find(R/25000 >= 1);
+% sets unphysical ratios to zero
+Z_(Delete) = 0;
+R(Delete) = 0;
 
 
-    % delete unphysical ratios
-    R = R(R~=0);
-    Z_ = Z_(Z_~=0);
+% delete unphysical ratios
+R = R(R~=0);
+Z_ = Z_(Z_~=0);
 
-figure(90) 
-
-
+figure(99) 
 format short g
-plot(R/1000,Z_,'mx')
+plot(R/1000,Z_,'bx')
 title(['MLE-Schätzer (nur TOT) mean= ' num2str(mean(Z_),3) '(' num2str(std(Z_),2) ')'])
 xlabel('Radius [\mum]')
 ylabel('z-Abstand [nm]')

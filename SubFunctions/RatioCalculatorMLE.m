@@ -1,4 +1,4 @@
-function [X, Y, Z, Int_, BG,ZEst,Start]=RatioCalculatorMLE(imagedata,rx ,ry)
+function [X, Y, Z, Int_, BG,ZEst,Start]=RatioCalculatorMLE(IMG,rx ,ry)
 global pxSize DAT I
 
 %%
@@ -17,7 +17,7 @@ ZEst=[];
 for j = 1:25%N_Images-1
     j
     %% Bild aufteilen
-    data = imagedata(:,:,j);
+    data = IMG(:,:,j);
     [dx dy dz] =size(data);
 
     
@@ -37,15 +37,17 @@ for j = 1:25%N_Images-1
                 if j==1
                     posX = ceil(DAT(i,2)/pxSize+.5);
                     posY = ceil(DAT(i,3)/pxSize+.5);
-                    Int = DAT(i,5);             
+                    Int = DAT(i,5);  
+                    BGstd = DAT(i,6);   
                 else
                     posX = ceil(DAT(Dat_UAF(j-1)+i,2)/pxSize+.5);
                     posY = ceil(DAT(Dat_UAF(j-1)+i,3)/pxSize+.5);
                     Int = DAT(Dat_UAF(j-1)+i,5);
+                    BGstd = DAT(Dat_UAF(j-1)+i,6);
                 end
 
                 % condition if fluoropühore lies to close to the edges
-                if(posY > 5 & posX > 5 & posY < dx-5 & posX < dy-5 & Int > 5000 & Int <50000)
+                if(posY > 5 & posX > 5 & posY < dx-5 & posX < dy-5 & BGstd >1000)
 
                     % estimate z
                     R=sqrt((posX*115-rx*115).^2+(posY*115-ry*115).^2);
@@ -53,27 +55,37 @@ for j = 1:25%N_Images-1
 
                     I=data(posY-5:posY+4,posX-5:posX+4);
 
-                    [x,y,z,ii,bg_,ZEst_] = MLE_Estimator_TOT(double(I),50 ,Int);%++ZestAnal/5
+                    [x,y,z,ii,bg_,ZEst_,Q] = MLE_Estimator_TOT(double(I),50 ,Int);%++ZestAnal/5
                     
-                    pause(.01)
-                    figure(1)
-                    imagesc(I)
-                    title(ZEst_)
-                    
-                    Verh_P(i)=z;
-                    ZEst_
-                    Int_=[Int_; ii];
-                    ZEst = [ZEst; ZEst_];
-                    Start =[Start; ZestAnal/5];
-                    X = [X; DAT(Dat_UAF(j)+i-1,2)];
-                    Y = [Y; DAT(Dat_UAF(j)+i-1,3)];
+                    if (ii>4000 & ii<10000 & Q/1e5<.75 & Q ~= 0)
+                        pause(.001)
+                        figure(11)
+                        imagesc(I)
+                        colormap(parula)
+                        title(ii)
+                    else
+                        pause(.5)
+                        figure(11)
+                        imagesc(I)
+                        colormap(hot)
+                        title(ii)
+                    end
+                    if (ii>4000 & ii<10000 & Q/1e5<.75 & Q ~= 0)
+%                         pause(.01)
+%                         figure(11)
+%                         imagesc(I)
+%                         title(ZEst_)
+
+                        Verh_P(i)=z;
+                        ZEst_
+                        Int_=[Int_; ii];
+                        ZEst = [ZEst; ZEst_];
+                        Start =[Start; ZestAnal/5];
+                        X = [X; DAT(Dat_UAF(j)+i-1,2)];
+                        Y = [Y; DAT(Dat_UAF(j)+i-1,3)];
+                    end
                 else
                     Int=[Int; 0];
-
-                    if i==1
-                        Verh_P = [];  
-                    end
-                    Verh_P = [Verh_P ; []]; 
 
                 end
 
